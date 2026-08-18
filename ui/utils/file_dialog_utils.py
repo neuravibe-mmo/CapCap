@@ -1,4 +1,5 @@
-﻿import os
+import os
+import sys
 import time
 
 
@@ -69,16 +70,31 @@ def browse_voice_output_folder(gui):
             gui.final_output_folder_edit.setText(dir_path)
 
 
-def open_folder(gui, path):
+def open_folder(gui_or_path, path: str | None = None):
+    if path is None and isinstance(gui_or_path, str):
+        gui = None
+        path = gui_or_path
+    else:
+        gui = gui_or_path
+
     from PySide6.QtWidgets import QMessageBox
 
     try:
         if not path:
             return
         os.makedirs(path, exist_ok=True)
-        os.startfile(os.path.abspath(path))
+        abs_path = os.path.abspath(path)
+        if hasattr(os, "startfile"):
+            os.startfile(abs_path)
+        elif sys.platform == "darwin":
+            import subprocess
+            subprocess.call(["open", abs_path])
+        else:
+            import subprocess
+            subprocess.call(["xdg-open", abs_path])
     except Exception as exc:
-        QMessageBox.critical(gui, "Error", f"Could not open folder:\n{exc}")
+        if gui is not None:
+            QMessageBox.critical(gui, "Error", f"Could not open folder:\n{exc}")
 
 
 def cleanup_file_if_exists(path: str):

@@ -1,4 +1,4 @@
-﻿import os
+import os
 import hashlib
 import json
 import re
@@ -669,12 +669,12 @@ class PreviewController:
         ])
 
         box = QMessageBox(self.gui)
-        box.setIcon(QMessageBox.Information)
+        box.setIcon(QMessageBox.Icon.Information)
         box.setWindowTitle("Export Summary")
         box.setText("Review export details before starting.")
         box.setInformativeText("\n".join(summary_lines))
-        start_btn = box.addButton("Start Export", QMessageBox.AcceptRole)
-        box.addButton("Cancel", QMessageBox.RejectRole)
+        start_btn = box.addButton("Start Export", QMessageBox.ButtonRole.AcceptRole)
+        box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
         box.exec()
         return box.clickedButton() is start_btn
 

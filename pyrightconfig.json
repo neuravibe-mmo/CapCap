@@ -1,8 +1,6 @@
 {
   "venvPath": ".",
   "venv": "venv",
-  "pythonPath": "venv/bin/python",
-  "pythonVersion": "3.11",
   "extraPaths": [
     ".",
     "app"

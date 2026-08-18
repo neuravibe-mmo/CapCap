@@ -4,8 +4,18 @@ import os
 import json
 import time
 import shutil
-import hashlib
 import re
+import sys
+
+_workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _workspace_root not in sys.path:
+    sys.path.insert(0, _workspace_root)
+_ui_root = os.path.join(_workspace_root, "ui")
+if _ui_root not in sys.path:
+    sys.path.insert(0, _ui_root)
+_app_root = os.path.join(_workspace_root, "app")
+if _app_root not in sys.path:
+    sys.path.append(_app_root)
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
@@ -24,6 +34,12 @@ from PySide6.QtWidgets import (
 )
 
 from runtime_paths import asset_path, subprocess_hidden_kwargs, workspace_root
+from app.i18n import get_i18n_manager, tr
+
+try:
+    from widgets.language_selector import LanguageSelectorWidget
+except ImportError:
+    from ui.widgets.language_selector import LanguageSelectorWidget
 
 
 
@@ -60,18 +76,18 @@ def _project_pipeline_status(video_path: str) -> tuple[str, str]:
         with open(os.path.normpath(state_path), "r", encoding="utf-8") as handle:
             state = json.load(handle)
     except (OSError, ValueError, TypeError):
-        return "Ready", "#8394aa"
+        return tr("launcher.status.ready", default="Ready"), "#8394aa"
     artifacts = dict(state.get("artifacts") or {})
     steps = dict(state.get("steps") or {})
     if artifacts.get("final_video"):
-        return "Export complete", "#6ee7d6"
+        return tr("launcher.status.export_complete", default="Export complete"), "#6ee7d6"
     if artifacts.get("voice_vi") or artifacts.get("mixed_vi"):
-        return "TTS complete", "#6ee7d6"
+        return tr("launcher.status.tts_complete", default="TTS complete"), "#6ee7d6"
     if str(steps.get("translate_raw", "")).lower() == "done" or artifacts.get("translation_final"):
-        return "Translate complete", "#78b8ff"
+        return tr("launcher.status.translate_complete", default="Translate complete"), "#78b8ff"
     if artifacts.get("transcript_segments"):
-        return "Transcript complete", "#f6c453"
-    return "Ready", "#8394aa"
+        return tr("launcher.status.transcript_complete", default="Transcript complete"), "#f6c453"
+    return tr("launcher.status.ready", default="Ready"), "#8394aa"
 
 
 def _extract_thumbnail(video_path: str, output_path: str) -> str:
@@ -131,7 +147,7 @@ class ProjectCard(QFrame):
         self._orig_pixmap = None
         self.setObjectName("statusCard")
         self.setMinimumSize(180, 184)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setCursor(Qt.PointingHandCursor)
         self.setStyleSheet("ProjectCard:hover { border: 2px solid #4ecdc4; }")
 
@@ -143,7 +159,7 @@ class ProjectCard(QFrame):
         self.thumb_label.setMinimumSize(160, 120)
         self.thumb_label.setAlignment(Qt.AlignCenter)
         self.thumb_label.setStyleSheet("background-color: #0d1220; border-radius: 6px;")
-        self.thumb_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.thumb_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout.addWidget(self.thumb_label)
 
@@ -153,16 +169,20 @@ class ProjectCard(QFrame):
         self.name_label.setStyleSheet("color: #e0e0e0; font-size: 11px; font-weight: 600;")
         layout.addWidget(self.name_label)
 
-        stage_text, stage_color = _project_pipeline_status(video_path)
-        self.stage_badge = QLabel(stage_text)
+        self.stage_badge = QLabel()
         self.stage_badge.setAlignment(Qt.AlignCenter)
+        self.update_stage_badge()
+        layout.addWidget(self.stage_badge)
+
+        self._load_thumb(thumbnail_cache_dir)
+
+    def update_stage_badge(self):
+        stage_text, stage_color = _project_pipeline_status(self.video_path)
+        self.stage_badge.setText(stage_text)
         self.stage_badge.setStyleSheet(
             f"background-color: #142437; color: {stage_color}; border: 1px solid #2e4b68; "
             "border-radius: 7px; padding: 3px 7px; font-size: 10px; font-weight: 700;"
         )
-        layout.addWidget(self.stage_badge)
-
-        self._load_thumb(thumbnail_cache_dir)
 
     def _load_thumb(self, cache_dir):
         thumb_path = os.path.join(cache_dir, _thumbnail_name(self.video_path))
@@ -344,7 +364,8 @@ class LauncherWindow(QDialog):
             self.setWindowIcon(QIcon(logo))
 
         self.setWindowTitle("CapCap - Video Translator")
-        self.setMinimumSize(840, 540)
+        self.setMinimumSize(980, 580)
+        self.resize(1040, 620)
         self.setStyleSheet("""
             QDialog {
                 background-color: #0a101e;
@@ -361,21 +382,29 @@ class LauncherWindow(QDialog):
         QTimer.singleShot(0, self._load_recent)
         QTimer.singleShot(0, self._validate_resources_for_device)
 
+        self._i18n_manager = get_i18n_manager()
+        self._i18n_manager.register_callback(self.retranslate_ui)
+        self.retranslate_ui()
+
+    def closeEvent(self, event):
+        if hasattr(self, "_i18n_manager"):
+            self._i18n_manager.unregister_callback(self.retranslate_ui)
+        super().closeEvent(event)
+
     def _build_ui(self):
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(16)
 
         header = QHBoxLayout()
-        title = QLabel("CapCap V7")
-        title.setStyleSheet("font-size: 26px; font-weight: 800; color: #ffffff;")
-        subtitle = QLabel("Video Translation & Voiceover Studio")
-        subtitle.setStyleSheet("font-size: 12px; color: #6ee7d6;")
-
+        self.title_label = QLabel("CapCap V7")
+        self.title_label.setStyleSheet("font-size: 26px; font-weight: 800; color: #ffffff;")
+        self.subtitle_label = QLabel("Video Translation & Voiceover Studio")
+        self.subtitle_label.setStyleSheet("font-size: 12px; color: #6ee7d6;")
 
         header_text = QVBoxLayout()
-        header_text.addWidget(title)
-        header_text.addWidget(subtitle)
+        header_text.addWidget(self.title_label)
+        header_text.addWidget(self.subtitle_label)
 
         has_gpu, gpu_name, cuda_ready = self._detect_gpu_with_cuda()
         gpu_usable = has_gpu and cuda_ready
@@ -444,6 +473,9 @@ class LauncherWindow(QDialog):
         device_row.addWidget(self.cpu_btn)
         device_row.addWidget(self.gpu_btn)
         device_row.addStretch()
+
+        self.lang_selector = LanguageSelectorWidget(show_label=True)
+        device_row.addWidget(self.lang_selector)
         header_text.addLayout(device_row)
         header.addLayout(header_text, 1)
 
@@ -616,12 +648,12 @@ class LauncherWindow(QDialog):
                 else:
                     prefix = "GPU mode needs:"
                 mb = QMessageBox(self)
-                mb.setIcon(QMessageBox.Warning)
+                mb.setIcon(QMessageBox.Icon.Warning)
                 mb.setWindowTitle("Missing Resources")
                 mb.setText(f"{prefix}\n\n" + "\n".join(f"- {label}" for label in labels))
                 mb.setInformativeText("Open Manage Resources to download them.")
-                mb.addButton("Manage Resources", QMessageBox.AcceptRole)
-                mb.addButton("Close", QMessageBox.RejectRole)
+                mb.addButton("Manage Resources", QMessageBox.ButtonRole.AcceptRole)
+                mb.addButton("Close", QMessageBox.ButtonRole.RejectRole)
                 mb.setStyleSheet(MSG_STYLE)
                 mb.exec()
                 self._validate_resources_for_device()
@@ -844,7 +876,7 @@ class LauncherWindow(QDialog):
                 from PySide6.QtCore import QUrl
                 QDesktopServices.openUrl(QUrl.fromLocalFile(projects_dir))
         except Exception as exc:
-            message = QMessageBox(QMessageBox.Warning, "Open Project Folder",
+            message = QMessageBox(QMessageBox.Icon.Warning, "Open Project Folder",
                 f"Could not open the projects folder:\n\n{exc}", QMessageBox.Ok, self)
             message.setStyleSheet(MSG_STYLE)
             message.exec()
@@ -852,7 +884,7 @@ class LauncherWindow(QDialog):
     def _on_clean_video_data(self):
         from PySide6.QtWidgets import QMessageBox
 
-        confirm = QMessageBox(QMessageBox.Warning, "Clean Video Data",
+        confirm = QMessageBox(QMessageBox.Icon.Warning, "Clean Video Data",
             "Remove all generated project data and video preview caches?\n\n"
             "Source videos, downloaded models, Piper voices, CUDA files, and application resources will not be touched.",
             QMessageBox.Yes | QMessageBox.No, self)
@@ -926,12 +958,12 @@ class LauncherWindow(QDialog):
 
         if errors:
             detail = "\n".join(errors)
-            message = QMessageBox(QMessageBox.Warning, "Clean Video Data",
+            message = QMessageBox(QMessageBox.Icon.Warning, "Clean Video Data",
                 f"Some data could not be removed:\n\n{detail}", QMessageBox.Ok, self)
             message.setStyleSheet(MSG_STYLE)
             message.exec()
         else:
-            message = QMessageBox(QMessageBox.Information, "Clean Video Data",
+            message = QMessageBox(QMessageBox.Icon.Information, "Clean Video Data",
                 "Generated project data and video caches were cleared.", QMessageBox.Ok, self)
             message.setStyleSheet(MSG_STYLE)
             message.exec()
@@ -1050,7 +1082,7 @@ class LauncherWindow(QDialog):
 
         duration = _get_video_duration(path)
         if duration <= 7200:
-            mb = QMessageBox(QMessageBox.Information, "No Split Needed",
+            mb = QMessageBox(QMessageBox.Icon.Information, "No Split Needed",
                 "This video is under 2 hours. You can open it directly with '+ New Project'.",
                 QMessageBox.Ok, self)
             mb.setStyleSheet(MSG_STYLE)
@@ -1072,7 +1104,7 @@ class LauncherWindow(QDialog):
         base, ext = os.path.splitext(path)
         out_pattern = f"{base}_part%03d{ext}"
 
-        reply = QMessageBox(QMessageBox.Question, "Confirm Split",
+        reply = QMessageBox(QMessageBox.Icon.Question, "Confirm Split",
             f"Split into {seg_minutes}-minute segments using stream copy (no re-encode, fast).\n\n"
             f"Output: {out_pattern}\n\nContinue?",
             QMessageBox.Yes | QMessageBox.No, self)
@@ -1105,7 +1137,7 @@ class LauncherWindow(QDialog):
         threading.Thread(target=_do_split, daemon=True).start()
         progress.exec()
 
-        mb = QMessageBox(QMessageBox.Information, "Done",
+        mb = QMessageBox(QMessageBox.Icon.Information, "Done",
             f"Video split into {seg_minutes}-minute segments.\nSaved alongside the original file.",
             QMessageBox.Ok, self)
         mb.setStyleSheet(MSG_STYLE)
@@ -1148,14 +1180,65 @@ class LauncherWindow(QDialog):
     def _update_gpu_label(self, has_gpu: bool, gpu_name: str, cuda_ready: bool):
         if has_gpu:
             if cuda_ready:
-                self._gpu_label.setText(f"GPU: {gpu_name}  \u2713 CUDA ready")
+                self._gpu_label.setText(tr("launcher.cuda_ready", default="GPU: {gpu_name}  ✓ CUDA ready", gpu_name=gpu_name))
                 self._gpu_label.setStyleSheet("font-size: 11px; color: #4ecdc4;")
             else:
-                self._gpu_label.setText(f"GPU: {gpu_name}  \u2717 Need GPU Acceleration Pack")
+                self._gpu_label.setText(tr("launcher.need_gpu_pack", default="GPU: {gpu_name}  ⚠ Need GPU Acceleration Pack", gpu_name=gpu_name))
                 self._gpu_label.setStyleSheet("font-size: 11px; color: #ffa500;")
         else:
-            self._gpu_label.setText("CPU only")
+            self._gpu_label.setText(tr("launcher.cpu_only", default="CPU only"))
             self._gpu_label.setStyleSheet("font-size: 11px; color: #5a7a9a;")
+
+    def _update_gpu_btn_text(self):
+        has_gpu, _gpu_name, cuda_ready = self._detect_gpu_with_cuda()
+        gpu_usable = has_gpu and cuda_ready
+        if hasattr(self, "cpu_btn"):
+            self.cpu_btn.setText(tr("launcher.cpu", default="CPU"))
+        if hasattr(self, "gpu_btn"):
+            if gpu_usable:
+                self.gpu_btn.setText(tr("launcher.gpu_recommended", default="GPU (Recommended)"))
+            else:
+                self.gpu_btn.setText(tr("launcher.gpu_na", default="GPU (N/A)"))
+
+    def retranslate_ui(self, lang_code=None):
+        """Update LauncherWindow UI text when current language locale changes."""
+        self.setWindowTitle(tr("launcher.window_title", default="CapCap - Video Translator"))
+        if hasattr(self, "title_label"):
+            self.title_label.setText(tr("launcher.title", default="CapCap V7"))
+        if hasattr(self, "subtitle_label"):
+            self.subtitle_label.setText(tr("launcher.subtitle", default="Video Translation & Voiceover Studio"))
+        if hasattr(self, "new_btn"):
+            self.new_btn.setText(tr("launcher.new_project", default="+ New Project"))
+        if hasattr(self, "split_btn"):
+            self.split_btn.setText(tr("launcher.split_video", default="Split Video"))
+        if hasattr(self, "resource_btn"):
+            self.resource_btn.setText(tr("launcher.manage_resources", default="Manage Resources"))
+        if hasattr(self, "open_project_btn"):
+            self.open_project_btn.setText(tr("launcher.open_project_folder", default="Open Project Folder"))
+            self.open_project_btn.setToolTip(tr("launcher.open_project_folder_tooltip", default="Open the CapCap projects folder"))
+        if hasattr(self, "clean_video_btn"):
+            self.clean_video_btn.setText(tr("launcher.clean_video_data", default="Clean Video Data"))
+            self.clean_video_btn.setToolTip(tr("launcher.clean_video_data_tooltip", default="Remove generated project data and video preview caches"))
+        if hasattr(self, "about_btn"):
+            self.about_btn.setText(tr("launcher.about_help", default="About / Help"))
+        if hasattr(self, "section_label"):
+            self.section_label.setText(tr("launcher.recent_projects", default="Recent Projects"))
+        if hasattr(self, "empty_label"):
+            self.empty_label.setText(tr("launcher.no_recent_projects", default='No recent projects. Click "+ New Project" to start.'))
+        if hasattr(self, "loading_label"):
+            self.loading_label.setText(tr("launcher.preparing_video", default="Preparing video..."))
+
+        self._update_gpu_btn_text()
+        has_gpu, gpu_name, cuda_ready = self._detect_gpu_with_cuda()
+        self._update_gpu_label(has_gpu, gpu_name, cuda_ready)
+
+        if hasattr(self, "grid"):
+            for i in range(self.grid.count()):
+                item = self.grid.itemAt(i)
+                if item:
+                    widget = item.widget()
+                    if isinstance(widget, ProjectCard):
+                        widget.update_stage_badge()
 
     @staticmethod
     def add_recent(settings_or_none, video_path: str):

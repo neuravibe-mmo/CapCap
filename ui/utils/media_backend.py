@@ -128,11 +128,11 @@ class QtMediaPlayerBackend(QObject):
     def _on_media_status(self, status):
         try:
             from PySide6.QtMultimedia import QMediaPlayer as _QMP
-            if status == _QMP.EndOfMedia:
+            if status == _QMP.MediaStatus.EndOfMedia:
                 # Pause (hold last frame) and emit StoppedState so the
                 # timeline play state is re-synced to "not playing".
                 self._player.pause()
-                self.stateChanged.emit(int(QMediaPlayer.PausedState.value))
+                self.stateChanged.emit(int(QMediaPlayer.PlaybackState.PausedState.value))
         except Exception:
             pass
 
@@ -162,7 +162,7 @@ class QtMediaPlayerBackend(QObject):
         return self._player.playbackState()
 
     def is_playing(self):
-        return self.playbackState() == QMediaPlayer.PlayingState
+        return self.playbackState() == QMediaPlayer.PlaybackState.PlayingState
 
     def set_subtitle_file(self, subtitle_path, subtitle_style=None):
         return None
@@ -294,7 +294,7 @@ class MpvMediaPlayerBackend(QObject):
         self.video_view = video_view
         self._position_ms = 0
         self._duration_ms = 0
-        self._state = QMediaPlayer.StoppedState
+        self._state = QMediaPlayer.PlaybackState.StoppedState
         self._source_path = ""
         self._audio_path = ""        # dubbed audio
         self._original_audio_path = ""  # original audio (extracted)
@@ -389,9 +389,9 @@ class MpvMediaPlayerBackend(QObject):
                 else:
                     reason = getattr(event, "reason", None)
                 if reason == "eof":
-                    self._state = QMediaPlayer.PausedState
+                    self._state = QMediaPlayer.PlaybackState.PausedState
                     try:
-                        self.stateChanged.emit(int(QMediaPlayer.PausedState.value))
+                        self.stateChanged.emit(int(QMediaPlayer.PlaybackState.PausedState.value))
                     except Exception:
                         pass
             except Exception:
@@ -474,7 +474,7 @@ class MpvMediaPlayerBackend(QObject):
 
         next_position = int(float(time_pos or 0.0) * 1000)
         next_duration = int(float(duration or 0.0) * 1000)
-        next_state = QMediaPlayer.PausedState if pause else QMediaPlayer.PlayingState
+        next_state = QMediaPlayer.PlaybackState.PausedState if pause else QMediaPlayer.PlaybackState.PlayingState
         if next_position != self._position_ms:
             self._position_ms = next_position
             self.positionChanged.emit(next_position)
@@ -490,8 +490,8 @@ class MpvMediaPlayerBackend(QObject):
         # pause readings immediately after play() to avoid racing
         # the explicit state change and killing the audio sidecars.
         if (
-            prev_state == QMediaPlayer.PlayingState
-            and next_state == QMediaPlayer.PausedState
+            prev_state == QMediaPlayer.PlaybackState.PlayingState
+            and next_state == QMediaPlayer.PlaybackState.PausedState
             and (eof or core_idle or self._duration_ms <= 0
                  or self._position_ms >= self._duration_ms - 250)
         ):
@@ -520,7 +520,7 @@ class MpvMediaPlayerBackend(QObject):
         self._source_path = source_path
         self._position_ms = 0
         self._duration_ms = 0
-        self._state = QMediaPlayer.PausedState
+        self._state = QMediaPlayer.PlaybackState.PausedState
         self._player.pause = True
         self._player.command("loadfile", source_path, "replace")
         
@@ -563,7 +563,7 @@ class MpvMediaPlayerBackend(QObject):
                 self._dubbed_player.play()
             except Exception:
                 pass
-        self._state = QMediaPlayer.PlayingState
+        self._state = QMediaPlayer.PlaybackState.PlayingState
         try:
             self.stateChanged.emit(int(self._state.value))
         except Exception:
@@ -581,7 +581,7 @@ class MpvMediaPlayerBackend(QObject):
                 self._dubbed_player.pause()
             except Exception:
                 pass
-        self._state = QMediaPlayer.PausedState
+        self._state = QMediaPlayer.PlaybackState.PausedState
         try:
             self.stateChanged.emit(int(self._state.value))
         except Exception:
@@ -606,7 +606,7 @@ class MpvMediaPlayerBackend(QObject):
         except Exception:
             pass
         self._position_ms = 0
-        self._state = QMediaPlayer.StoppedState
+        self._state = QMediaPlayer.PlaybackState.StoppedState
         self.positionChanged.emit(0)
         try:
             self.stateChanged.emit(int(self._state.value))
@@ -645,7 +645,7 @@ class MpvMediaPlayerBackend(QObject):
         return self._state
 
     def is_playing(self):
-        return self._state == QMediaPlayer.PlayingState
+        return self._state == QMediaPlayer.PlaybackState.PlayingState
 
     def clear_subtitle(self):
         # Hiding a selected MPV subtitle track is not sufficient here: its
@@ -1053,8 +1053,8 @@ class MpvMediaPlayerBackend(QObject):
     def _on_dubbed_status_changed(self, status):
         try:
             from PySide6.QtMultimedia import QMediaPlayer as _QMP
-            if status == _QMP.EndOfMedia:
-                if not self._player.pause and self._state == QMediaPlayer.PlayingState:
+            if status == _QMP.MediaStatus.EndOfMedia:
+                if not self._player.pause and self._state == QMediaPlayer.PlaybackState.PlayingState:
                     self._player.pause = True
         except Exception:
             pass
@@ -1109,7 +1109,7 @@ class MpvMediaPlayerBackend(QObject):
         if self._original_loaded_path:
             try:
                 a_state = self._original_player.playbackState()
-                a_paused = a_state == QMediaPlayer.PausedState or a_state == QMediaPlayer.StoppedState
+                a_paused = a_state == QMediaPlayer.PlaybackState.PausedState or a_state == QMediaPlayer.PlaybackState.StoppedState
             except Exception:
                 a_paused = True
             if v_paused != a_paused:
@@ -1132,7 +1132,7 @@ class MpvMediaPlayerBackend(QObject):
         if self._dubbed_loaded_path:
             try:
                 a_state = self._dubbed_player.playbackState()
-                a_paused = a_state == QMediaPlayer.PausedState or a_state == QMediaPlayer.StoppedState
+                a_paused = a_state == QMediaPlayer.PlaybackState.PausedState or a_state == QMediaPlayer.PlaybackState.StoppedState
             except Exception:
                 a_paused = True
             if v_paused != a_paused:

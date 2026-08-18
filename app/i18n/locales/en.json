@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "CapCap",
+    "title": "CapCap - Video Auto Translator & Subtitle Editor"
+  },
+  "launcher": {
+    "window_title": "CapCap - Video Translator",
+    "title": "CapCap V7",
+    "subtitle": "Video Translation & Voiceover Studio",
+    "cpu": "CPU",
+    "gpu_recommended": "GPU (Recommended)",
+    "gpu_na": "GPU (N/A)",
+    "cpu_only": "CPU only",
+    "cuda_ready": "GPU: {gpu_name}  ✓ CUDA ready",
+    "need_gpu_pack": "GPU: {gpu_name}  ⚠ Need GPU Acceleration Pack",
+    "new_project": "+ New Project",
+    "split_video": "Split Video",
+    "manage_resources": "Manage Resources",
+    "open_project_folder": "Open Project Folder",
+    "open_project_folder_tooltip": "Open the CapCap projects folder",
+    "clean_video_data": "Clean Video Data",
+    "clean_video_data_tooltip": "Remove generated project data and video preview caches",
+    "about_help": "About / Help",
+    "recent_projects": "Recent Projects",
+    "no_recent_projects": "No recent projects. Click \"+ New Project\" to start.",
+    "preparing_video": "Preparing video...",
+    "status": {
+      "ready": "Ready",
+      "transcript_complete": "Transcript complete",
+      "translate_complete": "Translate complete",
+      "tts_complete": "TTS complete",
+      "export_complete": "Export complete"
+    }
+  },
+  "workflow": {
+    "title": "Workflow",
+    "prepare": "Prepare",
+    "transcript": "Transcript",
+    "translate": "Translate",
+    "tts": "Generate Voice / TTS (Optional)",
+    "export": "Export",
+    "status": {
+      "not_started": "Not started",
+      "running": "Processing...",
+      "completed": "Completed",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    }
+  },
+  "tab": {
+    "media": "Media",
+    "audio": "Audio",
+    "language": "Language",
+    "voice": "Voice",
+    "style": "Style",
+    "advanced": "Advanced"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "save": "Save",
+    "close": "Close",
+    "browse": "Browse...",
+    "start": "Start",
+    "stop": "Stop",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "success": "Success",
+    "loading": "Loading..."
+  },
+  "language": {
+    "interface": "UI Language:",
+    "original": "Original language",
+    "target": "Target language",
+    "auto_detect": "Auto Detect"
+  }
+}

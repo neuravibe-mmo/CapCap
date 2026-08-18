@@ -4,19 +4,30 @@ import sys
 import threading
 import traceback
 
+_workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _workspace_root not in sys.path:
+    sys.path.insert(0, _workspace_root)
+_ui_root = os.path.join(_workspace_root, "ui")
+if _ui_root not in sys.path:
+    sys.path.insert(0, _ui_root)
+
 _SINGLE_INSTANCE_HANDLE = None
 
 
 def _acquire_single_instance() -> bool:
     """Allow only one GUI process (worker-server children are exempt)."""
     global _SINGLE_INSTANCE_HANDLE
-    if os.name != "nt":
+    if sys.platform != "win32":
         return True
     try:
         import ctypes
-        from ctypes import wintypes
+        from ctypes import wintypes  # type: ignore
 
-        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        win_dll = getattr(ctypes, "WinDLL", None)
+        if not callable(win_dll):
+            return True
+
+        kernel32 = win_dll("kernel32", use_last_error=True)  # type: ignore
         kernel32.CreateMutexW.argtypes = [wintypes.LPVOID, wintypes.BOOL, wintypes.LPCWSTR]
         kernel32.CreateMutexW.restype = wintypes.HANDLE
         kernel32.GetLastError.restype = wintypes.DWORD
@@ -48,7 +59,11 @@ if __name__ == "__main__" and ("--worker-server" in sys.argv or os.getenv("CAPCA
 if __name__ == "__main__" and not _acquire_single_instance():
     raise SystemExit(0)
 
-from main_window import VideoTranslatorGUI
+try:
+    from .main_window import VideoTranslatorGUI
+except ImportError:
+    from main_window import VideoTranslatorGUI
+
 
 __all__ = ["VideoTranslatorGUI"]
 
@@ -215,6 +230,10 @@ if __name__ == "__main__":
         try:
             window._current_video_path = os.path.abspath(video_path)
             window.ensure_media_backend_ready()
+            if not hasattr(window, "video_path_edit") or window.video_path_edit is None:
+                from PySide6.QtWidgets import QLineEdit
+                window.video_path_edit = QLineEdit()
+                window.video_path_edit.hide()
             window.video_path_edit.setText(video_path)
             window.media_player.setSource(QUrl.fromLocalFile(video_path))
             if hasattr(window, "refresh_video_dimensions"):

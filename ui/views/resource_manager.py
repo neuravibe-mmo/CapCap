@@ -232,7 +232,7 @@ def open_resource_manager(workspace_root: str = None, parent=None,
     def _make_section(title_text, expanded):
         wrapper = QFrame()
         wrapper.setObjectName("statusCard")
-        wrapper.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        wrapper.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         wrapper_layout = QVBoxLayout(wrapper)
         wrapper_layout.setContentsMargins(8, 2, 8, 2)
         wrapper_layout.setSpacing(0)
@@ -245,7 +245,7 @@ def open_resource_manager(workspace_root: str = None, parent=None,
         btn.setStyleSheet("QToolButton { text-align: left; font-weight: 700; color: #8ad7ff; border: none; padding: 2px 4px; margin: 0; }")
 
         inner = QWidget()
-        inner.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        inner.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         inner_layout = QVBoxLayout(inner)
         inner_layout.setContentsMargins(0, 0, 0, 4)
         inner_layout.setSpacing(2)

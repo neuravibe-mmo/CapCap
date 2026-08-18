@@ -28,7 +28,7 @@ cd CapCap
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements-local.txt
-python ui/gui.py
+venv/bin/python ui/gui.py
 ```
 
 Copy `.env_example` to `.env` only if you need manual provider or remote-server configuration. Most settings are available in the app.

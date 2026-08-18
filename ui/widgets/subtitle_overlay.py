@@ -30,6 +30,12 @@ class SubtitleOverlayItem(QGraphicsItem):
         self.custom_y_percent = 86
         self.render_text = True
         self.editable = False
+        self._suppressed = False
+
+    def set_suppressed(self, suppressed: bool):
+        self._suppressed = bool(suppressed)
+        if self._suppressed:
+            self.hide()
 
     def set_editable(self, editable: bool):
         self.editable = bool(editable)

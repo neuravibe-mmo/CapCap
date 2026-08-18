@@ -76,14 +76,14 @@ def _build_hidden_status_widgets(gui):
     gui.workflow_hint_label = QLabel()
     gui.workflow_hint_label.setObjectName("helperLabel")
     gui.workflow_hint_label.setWordWrap(True)
-    gui.workflow_hint_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+    gui.workflow_hint_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
     gui.workflow_hint_label.setTextInteractionFlags(Qt.NoTextInteraction)
 
 
 def _build_style_preset_card(title: str, line_one: str, line_two: str, radio: QRadioButton):
     card = QFrame()
     card.setObjectName("statusCard")
-    card.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+    card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
     card.setStyleSheet(
         "QFrame#statusCard { background-color: #132132; border: 1px solid #35506f; border-radius: 14px; }"
         "QFrame#statusCard:hover { border-color: #5aa6d9; }"
@@ -151,7 +151,7 @@ def _build_filter_preset_button(label: str):
     btn.setCheckable(True)
     btn.setObjectName("workflowTabBtn")
     btn.setMinimumHeight(32)
-    btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
     return btn
 
 
@@ -319,7 +319,7 @@ def build_start_group(gui, left_layout):
         btn.setChecked(checked)
         btn.setMinimumHeight(34)
         btn.setMinimumWidth(0)
-        btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         btn.setObjectName("workflowTabBtn")
         tab_group.addButton(btn)
         row = page_index // 2
@@ -343,7 +343,7 @@ def build_start_group(gui, left_layout):
     gui.show_progress_btn.setObjectName("workflowTabBtn")
     gui.show_progress_btn.setMinimumHeight(34)
     gui.show_progress_btn.setMinimumWidth(0)
-    gui.show_progress_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    gui.show_progress_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
     tab_bar_layout.addWidget(gui.show_progress_btn, 3, 0, 1, 2)
     workflow_shell_layout.addWidget(tab_bar)
 
@@ -889,7 +889,7 @@ def build_start_group(gui, left_layout):
     gui.subtitle_preset_summary_label = QLabel()
     gui.subtitle_preset_summary_label.setObjectName("helperLabel")
     gui.subtitle_preset_summary_label.setWordWrap(True)
-    gui.subtitle_preset_summary_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+    gui.subtitle_preset_summary_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
     gui.subtitle_preset_summary_label.setTextInteractionFlags(Qt.NoTextInteraction)
     subtitle_layout.addWidget(gui.subtitle_preset_summary_label)
 

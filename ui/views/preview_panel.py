@@ -582,7 +582,7 @@ class FramePreviewWidget(QWidget):
         self.preview_fill_focus_x = 0.5
         self.preview_fill_focus_y = 0.5
         self.setMinimumHeight(320)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.hide()
 
     def set_frame_image(self, image_path: str):
@@ -773,7 +773,7 @@ def build_preview_panel(gui):
     # compact minimum so the transport row always has its own space when the
     # user gives more room to the timeline.
     gui.video_view.setMinimumHeight(270)
-    gui.video_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    gui.video_view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     gui.timeline = _import_editor_timeline()()
     # The outer Timeline card owns the usable minimum height.  Do not give
     # the nested QGraphicsView the same large minimum: the card also contains
@@ -781,7 +781,7 @@ def build_preview_panel(gui):
     # Qt to squeeze/clip the view (including its horizontal scrollbar) when
     # the Preview is enlarged with the splitter.
     gui.timeline.setMinimumHeight(0)
-    gui.timeline.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    gui.timeline.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     if hasattr(gui, "voice_timing_sync_combo"):
         gui.timeline.set_voice_sync_mode(gui.voice_timing_sync_combo.currentText())
     gui.timeline.seekRequestedMs.connect(gui.set_position)
@@ -797,7 +797,7 @@ def build_preview_panel(gui):
 
     preview_card = QFrame()
     preview_card.setObjectName("statusCard")
-    preview_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    preview_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     preview_card_layout = QVBoxLayout(preview_card)
     preview_card_layout.setContentsMargins(12, 12, 12, 10)
     preview_card_layout.setSpacing(8)
@@ -1098,7 +1098,7 @@ def build_preview_panel(gui):
     gui.timeline_zoom_label.setObjectName("helperLabel")
     gui.timeline_zoom_label.setAlignment(Qt.AlignCenter)
     gui.timeline_zoom_label.setFixedWidth(48)
-    gui.timeline_zoom_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    gui.timeline_zoom_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
     gui.timeline_zoom_in_btn = QPushButton("+")
     gui.timeline_zoom_in_btn.setFixedWidth(34)
     gui.timeline_zoom_reset_btn = QPushButton("Fit")
@@ -1219,7 +1219,7 @@ def build_preview_panel(gui):
 
     inspector_shell = QWidget()
     inspector_shell.setObjectName("subtitleInspectorShell")
-    inspector_shell.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+    inspector_shell.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
     inspector_shell_layout = QHBoxLayout(inspector_shell)
     inspector_shell_layout.setContentsMargins(0, 0, 0, 0)
     inspector_shell_layout.setSpacing(0)

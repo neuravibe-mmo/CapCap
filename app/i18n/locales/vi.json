@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "CapCap",
+    "title": "CapCap - Tự động dịch Video & Chỉnh sửa Phụ đề"
+  },
+  "launcher": {
+    "window_title": "CapCap - Trình Dịch Video",
+    "title": "CapCap V7",
+    "subtitle": "Studio Dịch Video & Lồng Tiếng",
+    "cpu": "CPU",
+    "gpu_recommended": "GPU (Khuyên dùng)",
+    "gpu_na": "GPU (Không khả dụng)",
+    "cpu_only": "Chỉ dùng CPU",
+    "cuda_ready": "GPU: {gpu_name}  ✓ Đã sẵn sàng CUDA",
+    "need_gpu_pack": "GPU: {gpu_name}  ⚠ Cần tải Gói Tăng Tốc GPU",
+    "new_project": "+ Dự án mới",
+    "split_video": "Cắt nhỏ Video",
+    "manage_resources": "Quản lý Tài nguyên",
+    "open_project_folder": "Mở thư mục Dự án",
+    "open_project_folder_tooltip": "Mở thư mục lưu trữ các dự án CapCap",
+    "clean_video_data": "Dọn dẹp Dữ liệu Video",
+    "clean_video_data_tooltip": "Xóa dữ liệu dự án đã tạo và bộ nhớ đệm xem trước video",
+    "about_help": "Giới thiệu / Trợ giúp",
+    "recent_projects": "Dự án gần đây",
+    "no_recent_projects": "Chưa có dự án nào. Bấm \"+ Dự án mới\" để bắt đầu.",
+    "preparing_video": "Đang chuẩn bị video...",
+    "status": {
+      "ready": "Sẵn sàng",
+      "transcript_complete": "Đã trích xuất phụ đề",
+      "translate_complete": "Đã dịch thuật",
+      "tts_complete": "Đã lồng tiếng",
+      "export_complete": "Đã xuất Video"
+    }
+  },
+  "workflow": {
+    "title": "Quy trình xử lý",
+    "prepare": "Chuẩn bị",
+    "transcript": "Trích xuất phụ đề",
+    "translate": "Dịch thuật",
+    "tts": "Lồng tiếng / TTS (Tùy chọn)",
+    "export": "Xuất Video",
+    "status": {
+      "not_started": "Chưa bắt đầu",
+      "running": "Đang xử lý...",
+      "completed": "Đã hoàn thành",
+      "failed": "Thất bại",
+      "skipped": "Bỏ qua"
+    }
+  },
+  "tab": {
+    "media": "Tệp tin",
+    "audio": "Âm thanh",
+    "language": "Ngôn ngữ",
+    "voice": "Giọng đọc",
+    "style": "Kiểu dáng",
+    "advanced": "Nâng cao"
+  },
+  "common": {
+    "ok": "Đồng ý",
+    "cancel": "Hủy bỏ",
+    "apply": "Áp dụng",
+    "save": "Lưu",
+    "close": "Đóng",
+    "browse": "Duyệt file...",
+    "start": "Bắt đầu",
+    "stop": "Dừng lại",
+    "error": "Lỗi",
+    "warning": "Cảnh báo",
+    "info": "Thông tin",
+    "success": "Thành công",
+    "loading": "Đang tải..."
+  },
+  "language": {
+    "interface": "Ngôn ngữ giao diện:",
+    "original": "Ngôn ngữ gốc",
+    "target": "Ngôn ngữ đích",
+    "auto_detect": "Tự động phát hiện"
+  }
+}

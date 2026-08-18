@@ -62,7 +62,7 @@ class TrackLabelBar(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedWidth(self.TRACK_HEADER_W)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.setStyleSheet("background-color: #142030; border: none;")
         self._track_names: list[str] = []
         self._track_heights: list[int] = []
