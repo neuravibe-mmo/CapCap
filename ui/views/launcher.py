@@ -95,13 +95,14 @@ def _extract_thumbnail(video_path: str, output_path: str) -> str:
 
 def _ffmpeg_path():
     from runtime_paths import bin_path
-    return os.path.join(bin_path(), "ffmpeg", "ffmpeg.exe")
+    return bin_path("ffmpeg.exe")
 
 
 def _get_video_duration(video_path: str) -> float:
     try:
         import subprocess
-        ffprobe = _ffmpeg_path().replace("ffmpeg.exe", "ffprobe.exe")
+        from runtime_paths import bin_path
+        ffprobe = bin_path("ffprobe.exe")
         result = subprocess.run(
             [ffprobe, "-v", "error", "-show_entries", "format=duration",
              "-of", "csv=p=0", video_path],

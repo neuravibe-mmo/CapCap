@@ -48,11 +48,39 @@ def first_existing_path(*candidates: str) -> str:
 
 
 def bin_path(*parts: str) -> str:
-    primary = os.path.join(bundle_root(), "bin", *parts)
-    workspace_fallback = join_root("bin", *parts)
-    cwd_fallback = os.path.join(os.getcwd(), "bin", *parts)
-    exe_fallback = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "bin", *parts)
-    return first_existing_path(primary, workspace_fallback, cwd_fallback, exe_fallback)
+    import shutil
+
+    cleaned_parts = list(parts)
+    if sys.platform != "win32":
+        cleaned_parts = [p[:-4] if p.lower().endswith(".exe") else p for p in cleaned_parts]
+
+    name = cleaned_parts[-1] if cleaned_parts else ""
+
+    candidates = [
+        os.path.join(bundle_root(), "bin", *cleaned_parts),
+        join_root("bin", *cleaned_parts),
+        os.path.join(os.getcwd(), "bin", *cleaned_parts),
+        os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "bin", *cleaned_parts),
+    ]
+
+    for candidate in candidates:
+        if os.path.isfile(candidate) and (sys.platform == "win32" or os.access(candidate, os.X_OK)):
+            return candidate
+        if os.path.isdir(candidate) and name:
+            sub_exe = os.path.join(candidate, name)
+            if sys.platform == "win32":
+                sub_exe_win = sub_exe + ".exe"
+                if os.path.isfile(sub_exe_win):
+                    return sub_exe_win
+            if os.path.isfile(sub_exe) and os.access(sub_exe, os.X_OK):
+                return sub_exe
+
+    if name:
+        sys_binary = shutil.which(name)
+        if sys_binary:
+            return sys_binary
+
+    return first_existing_path(*candidates)
 
 
 def models_path(*parts: str) -> str:

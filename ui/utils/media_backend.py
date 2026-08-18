@@ -110,11 +110,14 @@ class QtMediaPlayerBackend(QObject):
         self._player = QMediaPlayer()
         self._audio_output = QAudioOutput()
         self._player.setAudioOutput(self._audio_output)
-        if isinstance(video_view, VideoView):
+        if hasattr(video_view, "video_item") and video_view.video_item is not None:
             self._player.setVideoOutput(video_view.video_item)
         self._player.positionChanged.connect(self.positionChanged.emit)
         self._player.durationChanged.connect(self.durationChanged.emit)
-        self._player.stateChanged.connect(lambda s: self.stateChanged.emit(int(s.value)))
+        if hasattr(self._player, "playbackStateChanged"):
+            self._player.playbackStateChanged.connect(lambda s: self.stateChanged.emit(int(s.value)))
+        elif hasattr(self._player, "stateChanged"):
+            self._player.stateChanged.connect(lambda s: self.stateChanged.emit(int(s.value)))
         # When the clip reaches the end, the QMediaPlayer goes to
         # StoppedState — surface this so the timeline can stop too
         # (Bug 2: video not pausing at end, timeline keeps running).
@@ -183,6 +186,21 @@ class QtMediaPlayerBackend(QObject):
         return None
 
     def clear_blur_region(self):
+        return None
+
+    def set_blur_regions_normalized(self, regions=None):
+        return None
+
+    def get_blur_region_normalized(self):
+        return []
+
+    def set_mask_region(self, mask_region=None):
+        return None
+
+    def set_mask_regions(self, mask_regions=None):
+        return None
+
+    def clear_mask_region(self):
         return None
 
     def set_color_filter_state(self, state=None):
@@ -1295,6 +1313,9 @@ class MpvMediaPlayerBackend(QObject):
 
 
 def create_media_backend(video_view):
+    force_qt = str(os.environ.get("CAPCAP_FORCE_QT_BACKEND", "")).strip().lower() in {"1", "true", "yes"}
+    if sys.platform == "darwin" or force_qt:
+        return QtMediaPlayerBackend(video_view)
     try:
         return MpvMediaPlayerBackend(video_view)
     except Exception:
@@ -1306,6 +1327,9 @@ def get_mpv_bundle_dir():
 
 
 def is_mpv_backend_available():
+    force_qt = str(os.environ.get("CAPCAP_FORCE_QT_BACKEND", "")).strip().lower() in {"1", "true", "yes"}
+    if sys.platform == "darwin" or force_qt:
+        return False
     try:
         prepare_mpv_bundle()
         import mpv  # noqa: F401
@@ -1315,6 +1339,25 @@ def is_mpv_backend_available():
 
 
 def prepare_mpv_bundle():
+    if sys.platform == "darwin":
+        mac_paths = [
+            "/opt/homebrew/lib/libmpv.dylib",
+            "/opt/homebrew/lib/libmpv.2.dylib",
+            "/usr/local/lib/libmpv.dylib",
+            "/usr/local/lib/libmpv.2.dylib",
+        ]
+        for p in mac_paths:
+            if os.path.exists(p):
+                try:
+                    import ctypes
+                    ctypes.CDLL(p)
+                    break
+                except Exception:
+                    pass
+        return
+
+    if not sys.platform.startswith("win"):
+        return
     mpv_dir = get_mpv_bundle_dir()
     if not mpv_dir.exists():
         raise FileNotFoundError(f"Bundled mpv directory not found: {mpv_dir}")

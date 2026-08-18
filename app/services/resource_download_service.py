@@ -494,6 +494,17 @@ class ResourceDownloadService:
     def list_resources(self) -> list[dict]:
         resources: list[dict] = [
             {
+                "id": "sensevoice:model",
+                "name": "SenseVoice Model",
+                "kind": "whisper_cpu",
+                "status": "installed" if self.is_resource_installed("sensevoice:model") else "missing",
+                "target_dir": models_path("sensevoice"),
+                "download_url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+                "expected_filename": "model.int8.onnx",
+                "auto_download_supported": True,
+                "description": "Default fast speech-recognition model for CPU mode.",
+            },
+            {
                 "id": "whisper:base",
                 "name": "Whisper Base",
                 "kind": "whisper_cpu",

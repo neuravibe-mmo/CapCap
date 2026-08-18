@@ -4290,7 +4290,7 @@ class VideoTranslatorGUI(QMainWindow):
 
         if hasattr(self, "blur_area_btn"):
             self.blur_area_btn.setEnabled(False)
-        if hasattr(self, "video_view"):
+        if hasattr(self, "video_view") and hasattr(self.video_view, "set_blur_edit_enabled"):
             self.video_view.set_blur_edit_enabled(False)
         if overlay is not None:
             overlay.set_editable(False)
@@ -10294,7 +10294,8 @@ class VideoTranslatorGUI(QMainWindow):
             and not is_playing
             and not bool(getattr(self, "_filter_thumbnail_visible", False))
         )
-        video_view.set_blur_edit_enabled(editing_allowed)
+        if hasattr(video_view, "set_blur_edit_enabled"):
+            video_view.set_blur_edit_enabled(editing_allowed)
         if blur_add_btn is not None:
             # The "+" button must be clickable even when the blur effect
             # toggle is OFF: pressing it should both enable the effect
@@ -10379,7 +10380,7 @@ class VideoTranslatorGUI(QMainWindow):
             self.ocr_region_btn.setStyleSheet("QPushButton { color: #6ee7d6; font-weight: bold; font-size: 10px; padding: 0; }")
             self._sync_blur_controls()
             return
-        if self._blur_effect_enabled():
+        if self._blur_effect_enabled() and hasattr(self.video_view, "set_blur_edit_enabled"):
             self.video_view.set_blur_edit_enabled(False)
         overlay.set_editable(True)
         overlay.sync_to_view()
@@ -14401,8 +14402,11 @@ class VideoTranslatorGUI(QMainWindow):
             # Preserve the complete project timeline on a normal application
             # close, including Text and Logo tracks. Optional layers are
             # removed only by the explicit clean/return workflow.
-            if hasattr(self, "video_view"):
-                self.video_view.clear_blur_region()
+            if hasattr(self, "video_view") and hasattr(self.video_view, "clear_blur_region"):
+                try:
+                    self.video_view.clear_blur_region()
+                except Exception:
+                    pass
             if hasattr(self, "media_player") and hasattr(self.media_player, "clear_mask_region"):
                 try:
                     self.media_player.clear_mask_region()

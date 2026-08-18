@@ -10,6 +10,19 @@ class VideoView(QGraphicsView):
     """Hosts video and subtitle overlay in one scene."""
 
     framingChanged = Signal(float, float)
+    blurRegionChanged = Signal()
+    blurEditFinished = Signal()
+    subtitlePositionChanged = Signal(int, int)
+    subtitleDragStarted = Signal()
+    logoMoved = Signal(float, float, float, float)
+    logoDeleted = Signal()
+    logoEditFinished = Signal()
+    maskRegionChanged = Signal()
+    maskMoved = Signal(float, float, float, float)
+    maskDeleted = Signal()
+    maskEditFinished = Signal()
+    textLayerSelected = Signal(str)
+    textLayerMoved = Signal(str, float, float)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -37,6 +50,68 @@ class VideoView(QGraphicsView):
         self._framing_drag_active = False
         self._framing_drag_start = QPointF()
         self._framing_drag_focus = (0.5, 0.5)
+        self._blur_edit_enabled = False
+
+    def set_blur_edit_enabled(self, enabled=False, *args, **kwargs):
+        self._blur_edit_enabled = bool(enabled)
+
+    def clear_blur_region(self, *args, **kwargs):
+        pass
+
+    def get_blur_region_normalized(self, *args, **kwargs):
+        return []
+
+    def set_blur_regions_normalized(self, regions=None, *args, **kwargs):
+        pass
+
+    def clear_logo(self, *args, **kwargs):
+        pass
+
+    def set_logos(self, *args, **kwargs):
+        pass
+
+    def set_logo_opacity(self, opacity=None, *args, **kwargs):
+        pass
+
+    def set_logo_rotation(self, rotation=None, *args, **kwargs):
+        pass
+
+    def clear_mask_region(self, *args, **kwargs):
+        pass
+
+    def set_mask_regions(self, *args, **kwargs):
+        pass
+
+    def set_subtitle_track_visible(self, visible=True, *args, **kwargs):
+        pass
+
+    def set_logo_track_visible(self, visible=True, *args, **kwargs):
+        pass
+
+    def get_preview_fill_focus(self, *args, **kwargs):
+        return (0.5, 0.5)
+
+    def set_preview_scale_mode(self, mode="fit", *args, **kwargs):
+        self.preview_scale_mode = str(mode or "fit")
+
+    def reset_preview_fill_focus(self, *args, **kwargs):
+        self.preview_fill_focus_x = 0.5
+        self.preview_fill_focus_y = 0.5
+
+    def set_subtitle_render_dimensions(self, w=None, h=None, *args, **kwargs):
+        pass
+
+    def get_preview_canvas_rect(self, *args, **kwargs):
+        return self.get_video_content_rect()
+
+    def reposition_subtitle(self, *args, **kwargs):
+        pass
+
+    def set_text_layers(self, layers=None, active_id="", *args, **kwargs):
+        pass
+
+    def clear_text_layers(self, *args, **kwargs):
+        pass
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
