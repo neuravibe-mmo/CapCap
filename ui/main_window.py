@@ -1,28 +1,57 @@
 from __future__ import annotations
 
-import sys
-import os
-import re
-import json
 import copy
 import glob
 import hashlib
+import json
+import os
+import re
 import shutil
+import sys
 import threading
 import time
 from typing import Any, cast
 from uuid import uuid4
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout,
-                             QHBoxLayout, QPushButton, QToolButton, QLabel, QLineEdit,
-                             QFileDialog, QTextEdit, QComboBox,
-                             QDoubleSpinBox,
-                             QFrame, QProgressBar, QMessageBox,
-                             QScrollArea, QHeaderView, QAbstractItemView,
-                             QColorDialog, QTabWidget, QDialog, QSizePolicy, QInputDialog, QLayout)
-from PySide6.QtCore import Qt, QUrl, QTimer, QSettings, QEvent, Signal, QPoint, QRect
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QIcon, QKeySequence, QPixmap, QTextCursor, QTextCharFormat
+
+from PySide6.QtCore import QEvent, QPoint, QRect, QSettings, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QFontDatabase,
+    QFontInfo,
+    QIcon,
+    QKeySequence,
+    QPixmap,
+    QTextCharFormat,
+    QTextCursor,
+)
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QColorDialog,
+    QComboBox,
+    QDialog,
+    QDoubleSpinBox,
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
+    QLabel,
+    QLayout,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QTabWidget,
+    QTextEdit,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 _UI_PATH = os.path.dirname(os.path.abspath(__file__))
 if _UI_PATH not in sys.path:
@@ -34,7 +63,7 @@ APP_PATH = os.path.join(_ROOT_PATH, 'app')
 if APP_PATH not in sys.path:
     sys.path.append(APP_PATH)
 
-from services import GUIProjectBridge, ProjectService, ResourceDownloadService, VoiceCatalogService
+from audio_mixer import ffprobe_wav_duration
 from controllers import PipelineController, PreviewController, SubtitleController
 from helpers import (
     build_guidance_state,
@@ -44,13 +73,17 @@ from helpers import (
     format_segments_to_srt,
     format_timestamp,
     get_export_button_label,
-    get_output_mode_key,
     parse_srt_to_segments,
     validate_srt_text,
 )
 from new_highlight_selector import auto_select_matches
+from services import (
+    GUIProjectBridge,
+    ProjectService,
+    ResourceDownloadService,
+    VoiceCatalogService,
+)
 from video_processor import srt_to_ass
-from audio_mixer import ffprobe_wav_duration
 
 
 def _safe_float(val: Any, default: float = 0.0) -> float:
@@ -73,92 +106,136 @@ def _safe_int(val: Any, default: int = 0) -> int:
 try:
     from .utils.display_utils import (
         cleanup_temp_preview_files as cleanup_temp_preview_files_impl,
-        clear_log as clear_log_impl,
-        log_message as log_message_impl,
-        show_error as show_error_impl,
-        show_frame_preview_dialog as show_frame_preview_dialog_impl,
-        show_processed_files as show_processed_files_impl,
     )
-    from .utils.file_dialog_utils import (
-        browse_audio_folder as browse_audio_folder_impl,
-        browse_audio_source as browse_audio_source_impl,
-        browse_background_audio as browse_background_audio_impl,
-        browse_existing_mixed_audio as browse_existing_mixed_audio_impl,
-        browse_srt_output_folder as browse_srt_output_folder_impl,
-        browse_voice_output_folder as browse_voice_output_folder_impl,
-        cleanup_file_if_exists as cleanup_file_if_exists_impl,
-        open_folder as open_folder_impl,
-    )
-    from .utils.icon_utils import load_icon
-    from .utils.media_utils import (
-        browse_video as browse_video_impl,
-        duration_changed as duration_changed_impl,
-        position_changed as position_changed_impl,
-        refresh_video_dimensions as refresh_video_dimensions_impl,
-        set_position as set_position_impl,
-        setup_media_player as setup_media_player_impl,
-        stop_video as stop_video_impl,
-        toggle_play as toggle_play_impl,
-        update_duration_label as update_duration_label_impl,
-        update_frame_preview_thumbnail as update_frame_preview_thumbnail_impl,
-    )
-    from .utils.settings_utils import load_user_settings as load_user_settings_impl, save_user_settings as save_user_settings_impl
-except (ImportError, ValueError):
     from .utils.display_utils import (
-        cleanup_temp_preview_files as cleanup_temp_preview_files_impl,
         clear_log as clear_log_impl,
+    )
+    from .utils.display_utils import (
         log_message as log_message_impl,
+    )
+    from .utils.display_utils import (
         show_error as show_error_impl,
+    )
+    from .utils.display_utils import (
         show_frame_preview_dialog as show_frame_preview_dialog_impl,
+    )
+    from .utils.display_utils import (
         show_processed_files as show_processed_files_impl,
     )
     from .utils.file_dialog_utils import (
         browse_audio_folder as browse_audio_folder_impl,
+    )
+    from .utils.file_dialog_utils import (
         browse_audio_source as browse_audio_source_impl,
+    )
+    from .utils.file_dialog_utils import (
         browse_background_audio as browse_background_audio_impl,
+    )
+    from .utils.file_dialog_utils import (
         browse_existing_mixed_audio as browse_existing_mixed_audio_impl,
+    )
+    from .utils.file_dialog_utils import (
         browse_srt_output_folder as browse_srt_output_folder_impl,
+    )
+    from .utils.file_dialog_utils import (
         browse_voice_output_folder as browse_voice_output_folder_impl,
+    )
+    from .utils.file_dialog_utils import (
         cleanup_file_if_exists as cleanup_file_if_exists_impl,
+    )
+    from .utils.file_dialog_utils import (
         open_folder as open_folder_impl,
     )
     from .utils.icon_utils import load_icon
     from .utils.media_utils import (
         browse_video as browse_video_impl,
+    )
+    from .utils.media_utils import (
         duration_changed as duration_changed_impl,
+    )
+    from .utils.media_utils import (
         position_changed as position_changed_impl,
+    )
+    from .utils.media_utils import (
         refresh_video_dimensions as refresh_video_dimensions_impl,
+    )
+    from .utils.media_utils import (
         set_position as set_position_impl,
+    )
+    from .utils.media_utils import (
         setup_media_player as setup_media_player_impl,
+    )
+    from .utils.media_utils import (
         stop_video as stop_video_impl,
+    )
+    from .utils.media_utils import (
         toggle_play as toggle_play_impl,
+    )
+    from .utils.media_utils import (
         update_duration_label as update_duration_label_impl,
+    )
+    from .utils.media_utils import (
         update_frame_preview_thumbnail as update_frame_preview_thumbnail_impl,
     )
-    from .utils.settings_utils import load_user_settings as load_user_settings_impl, save_user_settings as save_user_settings_impl
-from views import build_main_window_ui
-from widgets.progress_dialog import BackgroundableProgressDialog
+    from .utils.settings_utils import load_user_settings as load_user_settings_impl
+    from .utils.settings_utils import save_user_settings as save_user_settings_impl
+except (ImportError, ValueError):
+    from utils.display_utils import (  # type: ignore[no-redef]
+        cleanup_temp_preview_files as cleanup_temp_preview_files_impl,
+        clear_log as clear_log_impl,  # type: ignore[no-redef]
+        log_message as log_message_impl,  # type: ignore[no-redef]
+        show_error as show_error_impl,  # type: ignore[no-redef]
+        show_frame_preview_dialog as show_frame_preview_dialog_impl,  # type: ignore[no-redef]
+        show_processed_files as show_processed_files_impl,  # type: ignore[no-redef]
+    )
+    from utils.file_dialog_utils import (  # type: ignore[no-redef]
+        browse_audio_folder as browse_audio_folder_impl,
+        browse_audio_source as browse_audio_source_impl,  # type: ignore[no-redef]
+        browse_background_audio as browse_background_audio_impl,  # type: ignore[no-redef]
+        browse_existing_mixed_audio as browse_existing_mixed_audio_impl,  # type: ignore[no-redef]
+        browse_srt_output_folder as browse_srt_output_folder_impl,  # type: ignore[no-redef]
+        browse_voice_output_folder as browse_voice_output_folder_impl,  # type: ignore[no-redef]
+        cleanup_file_if_exists as cleanup_file_if_exists_impl,  # type: ignore[no-redef]
+        open_folder as open_folder_impl,  # type: ignore[no-redef]
+    )
+    from utils.icon_utils import load_icon  # type: ignore[no-redef]
+    from utils.media_utils import (  # type: ignore[no-redef]
+        browse_video as browse_video_impl,
+        duration_changed as duration_changed_impl,  # type: ignore[no-redef]
+        position_changed as position_changed_impl,  # type: ignore[no-redef]
+        refresh_video_dimensions as refresh_video_dimensions_impl,  # type: ignore[no-redef]
+        set_position as set_position_impl,  # type: ignore[no-redef]
+        setup_media_player as setup_media_player_impl,  # type: ignore[no-redef]
+        stop_video as stop_video_impl,  # type: ignore[no-redef]
+        toggle_play as toggle_play_impl,  # type: ignore[no-redef]
+        update_duration_label as update_duration_label_impl,  # type: ignore[no-redef]
+        update_frame_preview_thumbnail as update_frame_preview_thumbnail_impl,  # type: ignore[no-redef]
+    )
+    from utils.settings_utils import (  # type: ignore[no-redef]
+        load_user_settings as load_user_settings_impl,
+        save_user_settings as save_user_settings_impl,  # type: ignore[no-redef]
+    )
 from runtime_paths import app_path, asset_path, models_path, workspace_root
 from runtime_profile import is_remote_profile
+from views import build_main_window_ui
+from widgets.progress_dialog import BackgroundableProgressDialog
 from worker_adapters import (
+    AlternateRangeTranscriptionWorker,
     ExtractionWorker,
-    ResourceDownloadWorker,
     OcrTranslatorCaptureWorker,
     OcrTranslatorTranslationWorker,
     SegmentAudioPreviewWorker,
-    VoiceSamplePreviewWorker,
-    VocalSeparationWorker,
-    VoiceOverWorker,
     TimelineThumbnailWorker,
     TimelineWaveformWorker,
-    AlternateRangeTranscriptionWorker,
+    VocalSeparationWorker,
+    VoiceOverWorker,
+    VoiceSamplePreviewWorker,
 )
 
 # Import our backend modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'app'))
 from video_processor import get_video_dimensions
 from workflows.voice_workflow import predict_speed_ratios
-from audio_mixer import mix_voice_with_background
 
 
 def _default_asr_engine() -> str:
@@ -315,6 +392,9 @@ class VideoTranslatorGUI(QMainWindow):
         # DPI scaling.
         self.setWindowState(Qt.WindowState.WindowMaximized)
         self.setMinimumSize(1024, 640)
+        self.subtitle_color_hex: str = "#FFFFFF"
+        self._timed_layer_preview_signature: Any = None
+        self._segment_editor_rows: list[Any] = []
         self._responsive_layout_pending = False
         self._responsive_layout_mode = "desktop"
         self._initial_layout_finalized = False
@@ -1715,10 +1795,11 @@ class VideoTranslatorGUI(QMainWindow):
                         self.log(f"[Voice] Piper voice preloaded: {expected_voice}")
                 QTimer.singleShot(0, _mark_ready)
             except Exception as exc:
-                def _mark_failed():
+                err_msg = str(exc)
+                def _mark_failed(msg=err_msg):
                     if getattr(self, '_voice_preload_inflight', '') == expected_voice:
                         self._voice_preload_inflight = ''
-                        self.log(f"[Voice] Piper preload skipped: {exc}")
+                        self.log(f"[Voice] Piper preload skipped: {msg}")
                 QTimer.singleShot(0, _mark_failed)
 
         threading.Thread(target=_worker, args=(current_token,), daemon=True).start()
@@ -1765,7 +1846,7 @@ class VideoTranslatorGUI(QMainWindow):
         speaker = str((segment or {}).get("speaker", "") or "").strip()
         if self._uses_speaker_subtitle_colors() and speaker:
             return QColor(self._speaker_color_hex(speaker))
-        return QColor(self.subtitle_color_hex)
+        return QColor(getattr(self, "subtitle_color_hex", "#FFFFFF"))
 
     def _apply_live_subtitle_segment_color(self, segment: dict | None) -> None:
         item = getattr(getattr(self, "video_view", None), "subtitle_item", None)
@@ -1948,12 +2029,11 @@ class VideoTranslatorGUI(QMainWindow):
                     sp, voice=str(combo.currentData() or "")
                 )
             )
-            gender_combo.currentTextChanged.connect(
-                lambda value, sp=speaker, refresh=_refresh_speaker_voice_combo: (
-                    self._save_speaker_voice_assignment(sp, voice_gender_filter=value),
-                    refresh(),
-                )
-            )
+            def _on_gender_change(value: str, sp: str = speaker, refresh: Any = _refresh_speaker_voice_combo) -> None:
+                self._save_speaker_voice_assignment(sp, voice_gender_filter=value)
+                refresh()
+
+            gender_combo.currentTextChanged.connect(_on_gender_change)
             voice_combo.activated.connect(
                 lambda _index, sp=speaker: self.highlight_timeline_speaker(sp)
             )
@@ -1983,7 +2063,7 @@ class VideoTranslatorGUI(QMainWindow):
             reassign_row.addWidget(reassign_combo, 1)
             reassign_row.addWidget(reassign_button)
             row_layout.addLayout(reassign_row)
-            row.mousePressEvent = lambda event, sp=speaker, original=row.mousePressEvent: (
+            row.mousePressEvent = lambda event, sp=speaker, original=row.mousePressEvent: (  # type: ignore[method-assign,misc,func-returns-value]
                 self.toggle_timeline_speaker_highlight(sp), original(event)
             )[-1]
             layout.addWidget(row)
@@ -2249,6 +2329,7 @@ class VideoTranslatorGUI(QMainWindow):
 
     def _create_vietdict_template(self, resource_id: str):
         import csv
+
         from runtime_paths import models_path
         dir_path = models_path("vietnormalizer")
         os.makedirs(dir_path, exist_ok=True)
@@ -2288,6 +2369,7 @@ class VideoTranslatorGUI(QMainWindow):
     def open_normalizer_dict_dialog(self):
         import csv
         from pathlib import Path
+
         from runtime_paths import models_path
         custom_dir = Path(models_path("vietnormalizer"))
         custom_dir.mkdir(parents=True, exist_ok=True)
@@ -2335,7 +2417,7 @@ class VideoTranslatorGUI(QMainWindow):
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
-        from PySide6.QtWidgets import QTabWidget, QTableWidget, QTableWidgetItem, QHeaderView
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
         tabs = QTabWidget(dialog)
         layout.addWidget(tabs, 1)
 
@@ -4012,6 +4094,7 @@ class VideoTranslatorGUI(QMainWindow):
             return False
         try:
             import json
+
             from app.layers.timeline import Timeline
 
             with open(timeline_path, "r", encoding="utf-8") as handle:
@@ -5189,7 +5272,7 @@ class VideoTranslatorGUI(QMainWindow):
         an unavailable AI provider can finish a run through Google Translate.
         """
         models = list(getattr(self, "current_translated_segment_models", []) or [])
-        provider_counts = {}
+        provider_counts: dict[str, int] = {}
         for model in models:
             provider = str(getattr(model, "metadata", {}).get("translation_provider", "") or "").strip().lower()
             if provider:
@@ -5494,7 +5577,7 @@ class VideoTranslatorGUI(QMainWindow):
         preset = self.get_subtitle_preset_config()
         text = str(segment.get("text", "") or "")
         mode = self.subtitle_highlight_mode_combo.currentText().strip() if hasattr(self, "subtitle_highlight_mode_combo") else "Auto"
-        phrases = []
+        phrases: list[str] = []
         if mode in ("Auto", "Auto + Manual"):
             phrases.extend(segment.get("auto_highlights", []) or [])
         if mode in ("Manual", "Auto + Manual"):
@@ -5838,7 +5921,7 @@ class VideoTranslatorGUI(QMainWindow):
         row = self._find_segment_editor_row(index)
         if not row:
             return
-        segment = {}
+        segment: dict[str, Any] = {}
         if 0 <= index < len(self.current_translated_segments or []):
             segment = self.current_translated_segments[index] or {}
         subtitle_text = " ".join(str(segment.get("text", "") or "").split()).strip()
@@ -6555,16 +6638,7 @@ class VideoTranslatorGUI(QMainWindow):
             transform = getattr(layer, "transform", None) or Transform()
         except Exception:
             transform = None
-        # Get position/size from the layer (use transform or defaults)
-        if transform is not None and hasattr(transform, "x"):
-            x = float(getattr(transform, "x", 0.1)) / 100.0
-            y = float(getattr(transform, "y", 0.1)) / 100.0
-            scale_x = float(getattr(transform, "scale_x", 1.0))
-            scale_y = float(getattr(transform, "scale_y", 1.0))
-            w = 0.2 * scale_x
-            h = 0.2 * scale_y
-        else:
-            x, y, w, h = 0.1, 0.1, 0.2, 0.2
+
 
         # Store the handler lambdas as attributes so we can disconnect
         # them by reference. This avoids the libpyside RuntimeWarning
@@ -6912,14 +6986,13 @@ class VideoTranslatorGUI(QMainWindow):
         timeline = getattr(self, "timeline", None)
         model = getattr(timeline, "_timeline", None) if timeline is not None else None
         video_layer_id = ""
-        video_track = None
         video_layer = None
         for track in getattr(model, "tracks", []) or []:
             track_type = str(getattr(getattr(track, "type", ""), "value", getattr(track, "type", ""))).lower()
             if track_type != "video" and str(getattr(track, "name", "")) != "V1 Video":
                 continue
             if track.layers:
-                video_track, video_layer = track, track.layers[0]
+                video_layer = track.layers[0]
                 video_layer_id = str(getattr(video_layer, "id", "") or "")
                 break
         # If the M1 track was removed with its final layer, clear the
@@ -6992,10 +7065,6 @@ class VideoTranslatorGUI(QMainWindow):
             )
         # Load current track metadata into the controls
         meta = getattr(track, "metadata", None) or {}
-        try:
-            volume = float(meta.get("_volume", 100.0))
-        except (TypeError, ValueError):
-            volume = 100.0
         try:
             gain = float(meta.get("_gain_db", 0.0))
         except (TypeError, ValueError):
@@ -7225,7 +7294,6 @@ class VideoTranslatorGUI(QMainWindow):
         if not hasattr(self, "video_view") or not hasattr(self.video_view, "blur_overlay"):
             return
         try:
-            from app.layers.blur import BlurLayer
             regions = self.video_view.blur_overlay._regions or []
         except Exception:
             return
@@ -7278,7 +7346,6 @@ class VideoTranslatorGUI(QMainWindow):
         # Push the new style onto the B1 track layers (one payload
         # entry per BlurLayer).
         if hasattr(self, "timeline") and self.timeline._timeline:
-            from app.layers.blur import BlurLayer as _BL
             for tr in self.timeline._timeline.tracks:
                 if tr.name == "B1":
                     for i, l in enumerate(tr.layers):
@@ -7419,8 +7486,8 @@ class VideoTranslatorGUI(QMainWindow):
             layer = selected()
             if layer: layer.font_name = str(value); changed()
         def color_changed():
-            from PySide6.QtWidgets import QColorDialog
             from PySide6.QtGui import QColor
+            from PySide6.QtWidgets import QColorDialog
             layer = selected()
             chosen = QColorDialog.getColor(QColor(getattr(layer, "font_color", "#FFFFFF")), self, "Pick text color")
             if layer and chosen.isValid():
@@ -8387,8 +8454,6 @@ class VideoTranslatorGUI(QMainWindow):
             layer.transform.y = 0.5
             layer.z_index = idx
             text_track.layers.append(layer)
-            if hasattr(self.timeline, "_track_heights"):
-                self.timeline._track_heights[text_track.id] = text_track.height or 80
             self.timeline._redraw()
             self.timeline._selected_layer_id = layer.id
             self._show_text_inspector_for_track(text_track, layer)
@@ -8398,7 +8463,7 @@ class VideoTranslatorGUI(QMainWindow):
             from app.layers.image import ImageLayer
             img_track = find_or_create_track(tl, "I1 Image", LayerType.IMAGE, 80)
             idx = len(img_track.layers)
-            layer = ImageLayer(
+            layer = ImageLayer(  # type: ignore[assignment]
                 name=f"Image {idx + 1}",
                 source="",
                 start=0.0,
@@ -8409,8 +8474,9 @@ class VideoTranslatorGUI(QMainWindow):
             self.timeline._redraw()
 
         elif layer_type == "logo":
-            from app.layers.image import ImageLayer
             from PySide6.QtWidgets import QFileDialog
+
+            from app.layers.image import ImageLayer
             path, _ = QFileDialog.getOpenFileName(
                 self, "Select Logo / Watermark Image", "",
                 "Images (*.png *.jpg *.jpeg *.bmp *.gif *.svg);;All Files (*)"
@@ -8423,7 +8489,7 @@ class VideoTranslatorGUI(QMainWindow):
             # logo is currently editable in the preview overlay.
             idx = len(img_track.layers)
             dur = tl.duration if tl.duration > 0 else 10.0
-            layer = ImageLayer(
+            layer = ImageLayer(  # type: ignore[assignment]
                 name=f"Logo {idx + 1}",
                 source=path,
                 start=0.0,
@@ -8470,7 +8536,7 @@ class VideoTranslatorGUI(QMainWindow):
             # current playhead.
             blur_start = 0.0
             blur_end = float(tl.duration) if float(getattr(tl, "duration", 0.0) or 0.0) > 0.0 else 10.0
-            layer = BlurLayer(
+            layer = BlurLayer(  # type: ignore[assignment]
                 name=f"Blur {idx + 1}",
                 position_x=float(base_x),
                 position_y=float(base_y),
@@ -8583,7 +8649,7 @@ class VideoTranslatorGUI(QMainWindow):
             # Offset new regions slightly so their draggable overlays do
             # not start perfectly on top of an existing mask.
             stagger = idx % 4
-            layer = MaskLayer(
+            layer = MaskLayer(  # type: ignore[assignment]
                 name=f"Mask {idx + 1}",
                 position_x=0.3 + (stagger % 2) * 0.08,
                 position_y=0.4 + (stagger // 2) * 0.08,
@@ -9269,7 +9335,7 @@ class VideoTranslatorGUI(QMainWindow):
             rebuilt = list(source)
             pieces = [source[index]]
             for boundary in boundaries:
-                next_pieces = []
+                next_pieces: list[Any] = []
                 for piece in pieces:
                     start = float(piece.get("start", 0.0)); end = float(piece.get("end", 0.0))
                     if start + 0.01 < boundary < end - 0.01:
@@ -10147,10 +10213,6 @@ class VideoTranslatorGUI(QMainWindow):
                 selected_speaker = ""
                 if 0 <= idx < len(segment_source):
                     selected_speaker = str(segment_source[idx].get("speaker", "") or "").strip()
-                try:
-                    speaker_position = speaker_ids.index(selected_speaker)
-                except ValueError:
-                    speaker_position = -1
                 speaker_indicator = QLabel()
                 speaker_indicator.setFixedSize(10, 10)
                 speaker_indicator.setStyleSheet(
@@ -11005,14 +11067,11 @@ class VideoTranslatorGUI(QMainWindow):
             selected_id = str(getattr(getattr(self, "timeline", None), "_selected_layer_id", "") or "")
             selected_type = ""
             selected_track_name = ""
-            selected_track = None
-            selected_layer = None
             for track in getattr(getattr(self.timeline, "_timeline", None), "tracks", []) if hasattr(self, "timeline") else []:
                 for layer in getattr(track, "layers", []):
                     if str(getattr(layer, "id", "")) == selected_id:
                         selected_type = str(getattr(getattr(layer, "type", ""), "value", getattr(layer, "type", ""))).lower()
                         selected_track_name = str(getattr(track, "name", ""))
-                        selected_track, selected_layer = track, layer
                         break
                 if selected_type:
                     break
@@ -11066,13 +11125,13 @@ class VideoTranslatorGUI(QMainWindow):
         if not is_playing and hasattr(self, "media_player"):
             try:
                 orig_player = getattr(self.media_player, "_original_player", None)
-                if hasattr(self.media_player, "_original_loaded_path") and getattr(self.media_player, "_original_loaded_path", "") and orig_player is not None:
+                if hasattr(self.media_player, "_original_loaded_path") and getattr(self.media_player, "_original_loaded_path", None) and orig_player is not None:
                     orig_player.pause()
             except Exception:
                 pass
             try:
                 dubbed_player = getattr(self.media_player, "_dubbed_player", None)
-                if hasattr(self.media_player, "_dubbed_loaded_path") and getattr(self.media_player, "_dubbed_loaded_path", "") and dubbed_player is not None:
+                if hasattr(self.media_player, "_dubbed_loaded_path") and getattr(self.media_player, "_dubbed_loaded_path", None) and dubbed_player is not None:
                     dubbed_player.pause()
             except Exception:
                 pass
@@ -11120,9 +11179,9 @@ class VideoTranslatorGUI(QMainWindow):
         # deleted layers or overwrite their timing/style properties.
         if hasattr(self, "timeline") and regions and not timeline_model_restored:
             try:
+                from app.layers.base import LayerType
                 from app.layers.mask import MaskLayer
                 from app.layers.sync_bridge import find_or_create_track
-                from app.layers.base import LayerType
                 tl = self.timeline._timeline
                 track = find_or_create_track(tl, "M1", LayerType.MASK, 60)
                 track.layers.clear()
@@ -11529,7 +11588,6 @@ class VideoTranslatorGUI(QMainWindow):
             QMessageBox.warning(self, "Missing Voice", "Choose a voice first before generating subtitle audio preview.")
             return
         voice_speed = self._parse_voice_speed_value()
-        row = self._find_segment_editor_row(index)
         # The per-segment "Regenerate voice" button was moved to the
         # A2 Dub Track Inspector. Disable that one instead.
         if getattr(self, "audio_inspector_regenerate_voice_btn", None) is not None:
@@ -12717,8 +12775,8 @@ class VideoTranslatorGUI(QMainWindow):
         if not hasattr(self, "run_all_btn"):
             return
         btn = self.run_all_btn
-        from PySide6.QtWidgets import QMenu
         from PySide6.QtGui import QAction
+        from PySide6.QtWidgets import QMenu
         if btn.menu() is None:
             menu = QMenu(btn)
             menu.setObjectName("generateMenu")
@@ -13304,7 +13362,6 @@ class VideoTranslatorGUI(QMainWindow):
             is_ai = p != "google"
             is_google_ai_studio = p == "google_ai_studio"
             is_openai = p == "openai"
-            is_ollama = p == "ollama"
             is_google = p == "google"
             _toggle_visible(key_section_widget, is_google_ai_studio or is_openai)
             _toggle_visible(base_url_label, not remote_mode and is_ai)
@@ -14658,8 +14715,7 @@ class VideoTranslatorGUI(QMainWindow):
                     combo.addItem(label, value)
                 combo.blockSignals(False)
             target_index = combo.findData(current_mode)
-            if target_index < 0:
-                target_index = 0
+            target_index = max(target_index, 0)
             if combo.currentIndex() != target_index:
                 combo.blockSignals(True)
                 combo.setCurrentIndex(target_index)
@@ -14683,7 +14739,7 @@ class VideoTranslatorGUI(QMainWindow):
 
 
 def _relaunch_launcher():
-    from views.launcher import show_launcher, LauncherWindow
+    from views.launcher import LauncherWindow, show_launcher
     video_path = show_launcher(None)
     QApplication.setQuitOnLastWindowClosed(True)
     if not video_path:

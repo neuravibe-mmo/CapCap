@@ -1,8 +1,24 @@
 {
-  "venvPath": ".",
-  "venv": "venv",
+  "include": [
+    "app",
+    "ui"
+  ],
   "extraPaths": [
     ".",
-    "app"
-  ]
+    "app",
+    "ui"
+  ],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        ".",
+        "app",
+        "ui"
+      ]
+    }
+  ],
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonVersion": "3.11"
 }
